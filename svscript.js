@@ -59,279 +59,290 @@ $(document).ready(function() {
 
     // get data map for CSV headings
     // TODO doesn't work because modal is async
-    // var hKey = dataMapUIBuilder(csvHeadings);
+    dataMapUIBuilder(csvHeadings);
     // console.log("heading key", hKey);
 
-    // TODO remove - temporary heading key
-    var headingKeyInput = [{name: "Work Title", value: "WorkTitle"}, {name: "Duration", value: "Duration"}, {name: "Concert Title", value: "ConcertTitle"}, {name: "Program Position", value: "ProgramPosition"}, {name: "Composer", value: "Composer"}, {name: "Act", value: "null"}, {name: "First Performance", value: "null"}, {name: "highlight-include-6", value: "Living"}, {name: "highlight-include-7", value: "Women"}, {name: "highlight-include-8", value: "Heritages"}];
+    // trigger build if data map form submitted
+    $('#csv-options-form').submit(function(e){
+      e.preventDefault();
+      $('#csvOptionsModal').modal("hide");
+      console.log($(this).serializeArray());
+      var headingKeyInput = $(this).serializeArray();
+      buildChart2(headingKeyInput);
+    });
 
-    var hKey = {};
-    for (i in headingKeyInput) {
-      Object.assign(hKey, {[headingKeyInput[i]['name']]: headingKeyInput[i]['value']});
-    }
-    console.log(hKey);
+    // TODO remove - temporary heading key & builder - just dismiss modal
+    // var headingKeyInput = [{name: "Work Title", value: "WorkTitle"}, {name: "Duration", value: "Duration"}, {name: "Concert Title", value: "ConcertTitle"}, {name: "Program Position", value: "ProgramPosition"}, {name: "Composer", value: "Composer"}, {name: "Act", value: "null"}, {name: "First Performance", value: "null"}, {name: "highlight-include-6", value: "Living"}, {name: "highlight-include-7", value: "Women"}, {name: "highlight-include-8", value: "Heritages"}];
+    // buildChart2(headingKeyInput);
 
-
-    // DATA HANDLING
-    // rebuild data in nested form
-    for (i in data) {
-      row = data[i];
-
-      // first time each concert is created
-      if (concertData[row[hKey['Concert Title']]] == undefined) {
-        concertData[row[hKey['Concert Title']]] = {pieces: {}};
+    function buildChart2(headingKeyInput){
+      var hKey = {};
+      for (i in headingKeyInput) {
+        Object.assign(hKey, {[headingKeyInput[i]['name']]: headingKeyInput[i]['value']});
       }
+      console.log(hKey);
 
-      // build piece attributes
-      var newPiece = {};
-      for (key in hKey) {
-        // check if it's in coreData; check if it's a piece attribute
-        if (coreData[key] === undefined) {
-          Object.assign(newPiece, {[hKey[key]]: row[hKey[key]]});
-        } else if (coreData[key]['pieceAttr'] === true) {
-          // check data type
-          if (coreData[key]['type'] === "int") {
-            Object.assign(newPiece, {[key]: parseInt(row[hKey[key]])});
-          } else {
-            Object.assign(newPiece, {[key]: row[hKey[key]]});
+
+      // DATA HANDLING
+      // rebuild data in nested form
+      for (i in data) {
+        row = data[i];
+
+        // first time each concert is created
+        if (concertData[row[hKey['Concert Title']]] == undefined) {
+          concertData[row[hKey['Concert Title']]] = {pieces: {}};
+        }
+
+        // build piece attributes
+        var newPiece = {};
+        for (key in hKey) {
+          // check if it's in coreData; check if it's a piece attribute
+          if (coreData[key] === undefined) {
+            Object.assign(newPiece, {[hKey[key]]: row[hKey[key]]});
+          } else if (coreData[key]['pieceAttr'] === true) {
+            // check data type
+            if (coreData[key]['type'] === "int") {
+              Object.assign(newPiece, {[key]: parseInt(row[hKey[key]])});
+            } else {
+              Object.assign(newPiece, {[key]: row[hKey[key]]});
+            }
           }
         }
+
+        // add the piece to the concert
+        Object.assign(concertData[row[hKey['Concert Title']]]['pieces'], {[row[hKey['Work Title']]]: newPiece});
       }
 
-      // add the piece to the concert
-      Object.assign(concertData[row[hKey['Concert Title']]]['pieces'], {[row[hKey['Work Title']]]: newPiece});
-    }
+      // create concert metadata
+      for (concert in concertData) {
+        // max sequence number in csv can warn if pieces != max sequence (missing data case); think about how to handle WorkCount; can add other properties too (e.g. first performance, times performed)
 
-    // create concert metadata
-    for (concert in concertData) {
-      // max sequence number in csv can warn if pieces != max sequence (missing data case); think about how to handle WorkCount; can add other properties too (e.g. first performance, times performed)
+        // total duration (another option: to array, and then array reduce)
+        totalDuration = 0;
+        for (piece in concertData[concert]['pieces']) {
+          totalDuration += concertData[concert]['pieces'][piece]['Duration'];
+        }
+        Object.assign(concertData[concert], {'TotalDuration': totalDuration});
 
-      // total duration (another option: to array, and then array reduce)
-      totalDuration = 0;
-      for (piece in concertData[concert]['pieces']) {
-        totalDuration += concertData[concert]['pieces'][piece]['Duration'];
+        // TODO first performance, times performed
       }
-      Object.assign(concertData[concert], {'TotalDuration': totalDuration});
 
-      // TODO first performance, times performed
-    }
+      // GRAPH BUILDING
+      // find max concert duration & sort concerts by duration
+      var totalDurations = [];
+      for (concert in concertData) {
+        totalDurations.push([concert, concertData[concert]['TotalDuration']]);
+      }
+      var totalDurationValues = totalDurations.map(a => a[1]);
+      var maxConcertDuration = Math.max(...totalDurationValues);
+      totalDurations.sort((a, b) => b[1] - a[1]); // largest to smallest
 
-    // GRAPH BUILDING
-    // find max concert duration & sort concerts by duration
-    var totalDurations = [];
-    for (concert in concertData) {
-      totalDurations.push([concert, concertData[concert]['TotalDuration']]);
-    }
-    var totalDurationValues = totalDurations.map(a => a[1]);
-    var maxConcertDuration = Math.max(...totalDurationValues);
-    totalDurations.sort((a, b) => b[1] - a[1]); // largest to smallest
-
-    // chart container, heading, TODO legend container
-    buildContainer.push(
-      `<div class="chart-container">`,
-      `<h2 class="chart-title" id="chart-title">Untitled Chart</h2>`,
-      `<div class="bars-container">`
-    );
-
-    // build divs for individual concerts
-    for (i in totalDurations) {
-      var concert = totalDurations[i][0];
-      // label, bar holder
-
+      // chart container, heading, TODO legend container
       buildContainer.push(
-        `<div class="bar-container">`,
-        `<div class="bar-label">${concert}</div>`,
-        `<div class="bar-graphic">`
+        `<div class="chart-container">`,
+        `<h2 class="chart-title" id="chart-title">Untitled Chart</h2>`,
+        `<div class="bars-container">`
       );
 
-      // sort pieces by index
-      pieceIndex = []
-      for (piece in concertData[concert]['pieces']) {
-        pieceIndex.push([piece, concertData[concert]['pieces'][piece]['Program Position']]);
-      }
-      pieceIndex.sort((a, b) => a[1] - b[1]); // smallest to largest
-
-      var previous = 0;
-      var concertDuration = concertData[concert]['TotalDuration'];
-
-      var infoDivs = [`<div class="bar-info-container">`];
-
-      // build divs for individual pieces
-      for (i in pieceIndex) {
-        var piece = pieceIndex[i][0];
-        var pieceObj = concertData[concert]['pieces'][piece];
-
-        // set width of bars - TODO consider adding a manual width scale option
-        var pieceDuration = pieceObj['Duration'];
-        var left = Math.round(previous / maxConcertDuration * (100 * 10000)) / 10000;
-        var right = Math.round(((maxConcertDuration - (previous + pieceDuration)) / maxConcertDuration) * (100 * 10000)) / 10000;
-        previous += pieceDuration;
-
-        // unique IDs
-        var pieceDivID = idGenerator("piece-", buildContainer);
-        concertData[concert]['pieces'][piece]['ID'] = pieceDivID;
-        var infoDivID = idGenerator("info-", buildContainer);
-
-        // build info divs
-        infoDivs.push(
-          `<div class="bar-info-segment d-none" id="${infoDivID}">`,
-          `<p>`,
-          `<span class="piece-composer-name">${pieceObj['Composer']}: </span>`,
-          `<span class="piece-title">${piece}</span>`,
-          `</p>`,
-          `</div>`
-        );
+      // build divs for individual concerts
+      for (i in totalDurations) {
+        var concert = totalDurations[i][0];
+        // label, bar holder
 
         buildContainer.push(
-          `<div class="bar-segment" id="${pieceDivID}" infoid="${infoDivID}" style="left: ${left}%; right: ${right}%;">`,
-          `<div class="bar-segment-label">${pieceDuration}</div>`,
-          `</div>`
+          `<div class="bar-container">`,
+          `<div class="bar-label">${concert}</div>`,
+          `<div class="bar-graphic">`
         );
-      }
-      buildContainer.push(
-        `</div>`, // bar-graphic
-        infoDivs.join(""),
-        `</div>`, // bar-info-container
-        `</div>`  // bar-container
-      );
-    }
-    buildContainer.push(`</div></div>`); // chart-container and bars-container
 
-    // add graph to DOM
-    $('#graph-insert').html(buildContainer.join(""));
-
-    // make concertData a global variable
-    window.concertData = concertData;
-    console.log("concert data object: ", concertData);
-
-    // reveal options form
-    $('#options-form').removeClass("d-none");
-
-    // event handler to open info panels
-    $('.bar-segment').click(function(e) {
-      var infoID = "#" + $(this).attr("infoid");
-      $(infoID).siblings().addClass("d-none");
-      $(this).siblings().removeClass("bar-segment-selected");
-      $(infoID).toggleClass("d-none");
-      $(this).toggleClass("bar-segment-selected");
-    });
-
-      // CATEGORY HIGHLIGHT UI
-      // category highlight - selector input
-      var highlightCategories = [`<li><option value="null"></option></li>`];
-      for (key in hKey) {
-        if (coreData[key] === undefined || coreData[key]['category'] === true) {
-          highlightCategories.push(`<li><option>${hKey[key]}</option></li>`);
-          window.colorUI[hKey[key]] = {};
+        // sort pieces by index
+        pieceIndex = []
+        for (piece in concertData[concert]['pieces']) {
+          pieceIndex.push([piece, concertData[concert]['pieces'][piece]['Program Position']]);
         }
-      }
-      $('#select-highlight-category').html(highlightCategories.join(""));
+        pieceIndex.sort((a, b) => a[1] - b[1]); // smallest to largest
 
-      // category highlight - generate new options on change
-      $('#select-highlight-category').change(function() {
-        categoryHighlightMenuChange(data);
-      });
+        var previous = 0;
+        var concertDuration = concertData[concert]['TotalDuration'];
 
-    }
+        var infoDivs = [`<div class="bar-info-container">`];
 
-    // refreshes graph on form submit
-    $('#options-form').submit(function(e){
-      e.preventDefault();
-      var newConfig = configBuilder($(this).serializeArray());
-      updateChart(newConfig, window.concertData);
-    });
+        // build divs for individual pieces
+        for (i in pieceIndex) {
+          var piece = pieceIndex[i][0];
+          var pieceObj = concertData[concert]['pieces'][piece];
 
-    // utility to build data map UI
-    function dataMapUIBuilder(csvHeadings) {
-      // DATA MAPPING
-      // make selection UI for data mapping
-      var dataMapUI = [];
+          // set width of bars - TODO consider adding a manual width scale option
+          var pieceDuration = pieceObj['Duration'];
+          var left = Math.round(previous / maxConcertDuration * (100 * 10000)) / 10000;
+          var right = Math.round(((maxConcertDuration - (previous + pieceDuration)) / maxConcertDuration) * (100 * 10000)) / 10000;
+          previous += pieceDuration;
 
-      var csvHeadingOptions = [`<option value="null"></option>`];
-      for (i in csvHeadings) {
-        csvHeadingOptions.push(`<option>${csvHeadings[i]}</option>`);
-      }
+          // unique IDs
+          var pieceDivID = idGenerator("piece-", buildContainer);
+          concertData[concert]['pieces'][piece]['ID'] = pieceDivID;
+          var infoDivID = idGenerator("info-", buildContainer);
 
-      // build selection UI segments - required data
-      dataMapUI.push(`<legend>Required Data</legend>`);
-      for (dataField in coreData) {
-        if (coreData[dataField]['required'] === true) {
-          dataMapUI.push(
-            `<div class="mb-3">`,
-            `<label for="select-${dataField}" class="form-label">${dataField}</label>`,
-            `<select id="select-${dataField}" class="form-select" name="${dataField}" required>`,
-            csvHeadingOptions.join(""),
-            `</select>`,
+          // build info divs
+          infoDivs.push(
+            `<div class="bar-info-segment d-none" id="${infoDivID}">`,
+            `<p>`,
+            `<span class="piece-composer-name">${pieceObj['Composer']}: </span>`,
+            `<span class="piece-title">${piece}</span>`,
+            `</p>`,
+            `</div>`
+          );
+
+          buildContainer.push(
+            `<div class="bar-segment" id="${pieceDivID}" infoid="${infoDivID}" style="left: ${left}%; right: ${right}%;">`,
+            `<div class="bar-segment-label">${pieceDuration}</div>`,
             `</div>`
           );
         }
-      }
-
-      // optional fields (same as above, but no required attribute)
-      dataMapUI.push(`<legend>Optional Data</legend>`);
-      for (dataField in coreData) {
-        if (coreData[dataField]['required'] === false) {
-          dataMapUI.push(
-            `<div class="mb-3">`,
-            `<label for="select-${dataField}" class="form-label">${dataField}</label>`,
-            `<select id="select-${dataField}" class="form-select" name="${dataField}">`,
-            csvHeadingOptions.join(""),
-            `</select>`,
-            `</div>`
-          );
-        }
-      }
-
-      // category field selection
-      dataMapUI.push(
-        `<legend>Style Categories</legend>`,
-        `<p>Select the categories you want to use for chart styling:</p>`
-      );
-      for (i in csvHeadings) {
-        dataMapUI.push(
-          `<div class="mb-2">`,
-          `<input type="checkbox" id="highlight-include-${i}" class="form-check-input me-2" name="highlight-include-${i}" value="${csvHeadings[i]}">`,
-          `<label for="highlight-include-${i}" class="form-check-label">${csvHeadings[i]}</label>`,
-          `</div>`
+        buildContainer.push(
+          `</div>`, // bar-graphic
+          infoDivs.join(""),
+          `</div>`, // bar-info-container
+          `</div>`  // bar-container
         );
       }
+      buildContainer.push(`</div></div>`); // chart-container and bars-container
 
-      // put the UI in the modal
-      $('#csv-options-modal-content').html(dataMapUI.join(""));
+      // add graph to DOM
+      $('#graph-insert').html(buildContainer.join(""));
 
-      //validation - ensure selections are unique
-      $('.modal-body select').change(function(e){
-        // get currently selected values
-        var selectionValues = $('.modal-body select').map(function(){
-          return this.value;
-        }).get();
-        selectionValues = selectionValues.filter(a => a !== "null");
+      // make concertData a global variable
+      window.concertData = concertData;
+      console.log("concert data object: ", concertData);
 
-        // disable currently selected values (except for tag selecting it); remove checkboxes for fields already spoken for
-        $('.modal-body option').removeAttr("disabled");
-        $('.modal-body div > input[type="checkbox"]').removeClass("d-none");
-        for (i in selectionValues) {
-          $('.modal-body option').filter(function(){
-            return $(this).text() === selectionValues[i] && $(this).parent("select").val() !== selectionValues[i];
-          }).attr("disabled", "disabled");
-          $(`.modal-body input[type="checkbox"][value="${selectionValues[i]}"]`).parent("div").addClass("d-none");
+      // reveal options form
+      $('#options-form').removeClass("d-none");
+
+      // event handler to open info panels
+      $('.bar-segment').click(function(e) {
+        var infoID = "#" + $(this).attr("infoid");
+        $(infoID).siblings().addClass("d-none");
+        $(this).siblings().removeClass("bar-segment-selected");
+        $(infoID).toggleClass("d-none");
+        $(this).toggleClass("bar-segment-selected");
+      });
+
+        // CATEGORY HIGHLIGHT UI
+        // category highlight - selector input
+        var highlightCategories = [`<li><option value="null"></option></li>`];
+        for (key in hKey) {
+          if (coreData[key] === undefined || coreData[key]['category'] === true) {
+            highlightCategories.push(`<li><option>${hKey[key]}</option></li>`);
+            window.colorUI[hKey[key]] = {};
+          }
         }
-      });
+        $('#select-highlight-category').html(highlightCategories.join(""));
 
-      // trigger modal
-      $('#csvOptionsModal').modal("show");
-      // TODO clear the file input? But not when successful?
-      $('#csvOptionsModal').on('hidden.bs.modal', function(){
-        console.log("modal finished");
-      });
+        // category highlight - generate new options on change
+        $('#select-highlight-category').change(function() {
+          categoryHighlightMenuChange(data);
+        });
 
-      $('#csv-options-form').submit(function(e){
+      }
+
+      // refreshes graph on form submit
+      $('#options-form').submit(function(e){
         e.preventDefault();
-        $('#csvOptionsModal').modal("hide");
-        console.log($(this).serializeArray());
-        return $(this).serializeArray(); // TODO make mapping object
+        var newConfig = configBuilder($(this).serializeArray());
+        updateChart(newConfig, window.concertData);
       });
 
+      // utility to build data map UI
+      function dataMapUIBuilder(csvHeadings) {
+        // DATA MAPPING
+        // make selection UI for data mapping
+        var dataMapUI = [];
+
+        var csvHeadingOptions = [`<option value="null"></option>`];
+        for (i in csvHeadings) {
+          csvHeadingOptions.push(`<option>${csvHeadings[i]}</option>`);
+        }
+
+        // build selection UI segments - required data
+        dataMapUI.push(`<legend>Required Data</legend>`);
+        for (dataField in coreData) {
+          if (coreData[dataField]['required'] === true) {
+            dataMapUI.push(
+              `<div class="mb-3">`,
+              `<label for="select-${dataField}" class="form-label">${dataField}</label>`,
+              `<select id="select-${dataField}" class="form-select" name="${dataField}" required>`,
+              csvHeadingOptions.join(""),
+              `</select>`,
+              `</div>`
+            );
+          }
+        }
+
+        // optional fields (same as above, but no required attribute)
+        dataMapUI.push(`<legend>Optional Data</legend>`);
+        for (dataField in coreData) {
+          if (coreData[dataField]['required'] === false) {
+            dataMapUI.push(
+              `<div class="mb-3">`,
+              `<label for="select-${dataField}" class="form-label">${dataField}</label>`,
+              `<select id="select-${dataField}" class="form-select" name="${dataField}">`,
+              csvHeadingOptions.join(""),
+              `</select>`,
+              `</div>`
+            );
+          }
+        }
+
+        // category field selection
+        dataMapUI.push(
+          `<legend>Style Categories</legend>`,
+          `<p>Select the categories you want to use for chart styling:</p>`
+        );
+        for (i in csvHeadings) {
+          dataMapUI.push(
+            `<div class="mb-2">`,
+            `<input type="checkbox" id="highlight-include-${i}" class="form-check-input me-2" name="highlight-include-${i}" value="${csvHeadings[i]}">`,
+            `<label for="highlight-include-${i}" class="form-check-label">${csvHeadings[i]}</label>`,
+            `</div>`
+          );
+        }
+
+        // put the UI in the modal
+        $('#csv-options-modal-content').html(dataMapUI.join(""));
+
+        //validation - ensure selections are unique
+        $('.modal-body select').change(function(e){
+          // get currently selected values
+          var selectionValues = $('.modal-body select').map(function(){
+            return this.value;
+          }).get();
+          selectionValues = selectionValues.filter(a => a !== "null");
+
+          // disable currently selected values (except for tag selecting it); remove checkboxes for fields already spoken for
+          $('.modal-body option').removeAttr("disabled");
+          $('.modal-body div > input[type="checkbox"]').removeClass("d-none");
+          for (i in selectionValues) {
+            $('.modal-body option').filter(function(){
+              return $(this).text() === selectionValues[i] && $(this).parent("select").val() !== selectionValues[i];
+            }).attr("disabled", "disabled");
+            $(`.modal-body input[type="checkbox"][value="${selectionValues[i]}"]`).parent("div").addClass("d-none");
+          }
+        });
+
+        // trigger modal
+        $('#csvOptionsModal').modal("show");
+        // TODO clear the file input? But not when successful?
+        $('#csvOptionsModal').on('hidden.bs.modal', function(){
+          console.log("modal finished");
+        });
+
+        // $('#csv-options-form').submit(function(e){
+        //   e.preventDefault();
+        //   $('#csvOptionsModal').modal("hide");
+        //   console.log($(this).serializeArray());
+        //   return $(this).serializeArray(); // TODO make mapping object
+        // });
+      }
     }
 
     // utility to update chart after first build
