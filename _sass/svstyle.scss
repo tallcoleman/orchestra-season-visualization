@@ -1,0 +1,133 @@
+@charset "UTF-8";
+// Build command: `sass _sass/svstyle.scss svstyle.css`
+// or `sass /Users/ben/OneDrive/Documents/Programming Projects/Season Visualization/versionOne/svstyle.scss /Users/ben/OneDrive/Documents/Programming Projects/Season Visualization/versionOne/svstyle.css`
+
+// Variables
+$max-width: 640px; // same effective width as tallcoleman.me
+$graph-margin-bottom: 4px;
+$base-font-size: 16px;
+
+$main-color: #4477AA;
+
+$grey-color:       #555;
+$grey-color-very-light: lighten($grey-color, 60%);
+$grey-color-light: lighten($grey-color, 40%);
+$grey-color-dark:  darken($grey-color, 25%);
+
+$bar-height: 28px;
+
+
+// Colors
+// https://personal.sron.nl/~pault/#sec:qualitative
+// Another option: https://davidmathlogic.com/colorblind/
+$cs-grey: #BBBBBB;
+
+// default palette
+$colors: (
+  cs-grey: #BBBBBB,
+  cs-blue: #4477AA,
+  cs-cyan: #66CCEE,
+  cs-green: #228833,
+  cs-yellow: #CCBB44,
+  cs-red: #EE6677,
+  cs-purple: #AA3377,
+);
+
+// generates .highlightX classes
+$i: 1;
+@each $name, $hex in $colors {
+  .bar-segment.highlight#{$i} {
+    background-color: $hex;
+  }
+  $i: $i + 1;
+}
+
+// @import
+//   "fonts"
+//   // "layout"
+// ;
+
+// Graph
+.chart-container {
+  max-width: $max-width;
+}
+
+/* legend styling */
+.legend-container {
+  margin-bottom: $graph-margin-bottom;
+  padding-bottom: 10px;
+
+  div {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
+.legend-item {
+  margin-right: 10px;
+}
+
+.legend-item-color {
+  height: 18px;
+  width: 18px;
+  margin-right: 3px;
+}
+
+.legend-item-label {
+}
+
+/* barchart styling */
+/* In datawrapper, there was some fancy last child stuff going on */
+.bar-container {
+  margin-bottom: $graph-margin-bottom;
+  width: 100%;
+}
+
+.bar-label {
+  margin-bottom: $graph-margin-bottom;
+  padding-right: 5px;
+}
+
+.bar-graphic {
+  display: inline-block;
+  position: relative;
+  height: $bar-height;
+  width: 100%;
+}
+
+.bar-segment {
+  background: $cs-grey;
+  position: absolute;
+  height: $bar-height;
+  margin-right: 2px;
+
+  &-selected {
+    box-shadow: 0px 2px 0px black;
+  }
+
+  &:hover {
+    box-shadow: 0px 2px 0px var(--bs-blue);
+  }
+}
+
+.bar-segment-label {
+  padding: 2px 5px;
+  color: white;
+}
+
+// piece info styling
+
+.bar-info-container {
+  padding-left: 10px;
+}
+
+.piece-composer-name {
+  font-weight: bold;
+}
+
+// control styling
+
+#highlight-category-list {
+  max-height: 10em;
+  overflow: auto;
+}

@@ -1,0 +1,37 @@
+$ui-border-radius: 3px;
+
+body {
+  font-family: "Fira Sans", sans-serif;
+  max-width: $max-width;
+}
+
+button, input[type="button"] {
+  border: 1px solid black;
+  border-radius: $ui-border-radius;
+  background-color: lighten($main-color, 50%);
+  // font-size: $small-ish-font-size;
+  padding: $base-font-size/3 $base-font-size/2;
+
+  &:hover {
+    -webkit-box-shadow: 1px 1px 1px $grey-color-light;
+    box-shadow: 1px 1px 1px $grey-color-light;
+  }
+
+  &:active {
+    color: #fff;
+    background-color: $main-color;
+  }
+}
+
+input[type="text"] {
+  border: 1px solid $grey-color-dark;
+  border-radius: $ui-border-radius;
+  height: $base-font-size;
+  padding: $base-font-size/3 $base-font-size/2;
+}
+
+select {
+  padding: $base-font-size/3 $base-font-size/2;
+  border-radius: $ui-border-radius;
+  -webkit-appearance: none;
+}

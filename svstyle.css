@@ -1,0 +1,81 @@
+.bar-segment.highlight1 {
+  background-color: #BBBBBB; }
+
+.bar-segment.highlight2 {
+  background-color: #4477AA; }
+
+.bar-segment.highlight3 {
+  background-color: #66CCEE; }
+
+.bar-segment.highlight4 {
+  background-color: #228833; }
+
+.bar-segment.highlight5 {
+  background-color: #CCBB44; }
+
+.bar-segment.highlight6 {
+  background-color: #EE6677; }
+
+.bar-segment.highlight7 {
+  background-color: #AA3377; }
+
+.chart-container {
+  max-width: 640px; }
+
+/* legend styling */
+.legend-container {
+  margin-bottom: 4px;
+  padding-bottom: 10px; }
+  .legend-container div {
+    display: inline-block;
+    vertical-align: middle; }
+
+.legend-item {
+  margin-right: 10px; }
+
+.legend-item-color {
+  height: 18px;
+  width: 18px;
+  margin-right: 3px; }
+
+/* barchart styling */
+/* In datawrapper, there was some fancy last child stuff going on */
+.bar-container {
+  margin-bottom: 4px;
+  width: 100%; }
+
+.bar-label {
+  margin-bottom: 4px;
+  padding-right: 5px; }
+
+.bar-graphic {
+  display: inline-block;
+  position: relative;
+  height: 28px;
+  width: 100%; }
+
+.bar-segment {
+  background: #BBBBBB;
+  position: absolute;
+  height: 28px;
+  margin-right: 2px; }
+  .bar-segment-selected {
+    box-shadow: 0px 2px 0px black; }
+  .bar-segment:hover {
+    box-shadow: 0px 2px 0px var(--bs-blue); }
+
+.bar-segment-label {
+  padding: 2px 5px;
+  color: white; }
+
+.bar-info-container {
+  padding-left: 10px; }
+
+.piece-composer-name {
+  font-weight: bold; }
+
+#highlight-category-list {
+  max-height: 10em;
+  overflow: auto; }
+
+/*# sourceMappingURL=svstyle.css.map */
