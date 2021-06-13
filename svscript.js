@@ -22,6 +22,8 @@ $(document).ready(function() {
     highlight7: "#AA3377",
   };
 
+  var intermissionKey = ["intermission", "Intermission"];
+
   // used to remember UI color selections
   window.colorUI = {};
 
@@ -124,11 +126,20 @@ $(document).ready(function() {
         // max sequence number in csv can warn if pieces != max sequence (missing data case); think about how to handle WorkCount; can add other properties too (e.g. first performance, times performed)
 
         // total duration (another option: to array, and then array reduce)
+        // time to first intermission (only if Act is included in data)
         totalDuration = 0;
+        timeToIntermission = 0;
         for (piece in concertData[concert]['pieces']) {
-          totalDuration += concertData[concert]['pieces'][piece]['Duration'];
+          let pieceDuration = concertData[concert]['pieces'][piece]['Duration'];
+          totalDuration += pieceDuration;
+          if (hKey['Act'] !== "null" && concertData[concert]['pieces'][piece]['Act'] === 1) {
+            timeToIntermission += pieceDuration;
+          }
         }
-        Object.assign(concertData[concert], {'TotalDuration': totalDuration});
+        Object.assign(concertData[concert], {
+          'Total Duration': totalDuration,
+          'Time to Intermission': timeToIntermission
+        });
 
         // TODO first performance, times performed
       }
@@ -137,7 +148,7 @@ $(document).ready(function() {
       // find max concert duration & sort concerts by duration
       var totalDurations = [];
       for (concert in concertData) {
-        totalDurations.push([concert, concertData[concert]['TotalDuration']]);
+        totalDurations.push([concert, concertData[concert]['Total Duration']]);
       }
       var totalDurationValues = totalDurations.map(a => a[1]);
       var maxConcertDuration = Math.max(...totalDurationValues);
@@ -155,8 +166,11 @@ $(document).ready(function() {
         var concert = totalDurations[i][0];
         // label, bar holder
 
+        var concertID = idGenerator("concert-", buildContainer);
+        Object.assign(concertData[concert], {'ID': concertID});
+
         buildContainer.push(
-          `<div class="bar-container">`,
+          `<div class="bar-container" id="${concertID}">`,
           `<div class="bar-label">${concert}</div>`,
           `<div class="bar-graphic">`
         );
@@ -169,7 +183,7 @@ $(document).ready(function() {
         pieceIndex.sort((a, b) => a[1] - b[1]); // smallest to largest
 
         var previous = 0;
-        var concertDuration = concertData[concert]['TotalDuration'];
+        var concertDuration = concertData[concert]['Total Duration'];
 
         var infoDivs = [`<div class="bar-info-container d-none">`];
 
@@ -189,6 +203,12 @@ $(document).ready(function() {
           concertData[concert]['pieces'][piece]['ID'] = pieceDivID;
           var infoDivID = idGenerator("info-", buildContainer);
 
+          // check for intermission in data
+          var intermissionClass = "";
+          if (intermissionKey.includes(piece)) {
+            intermissionClass = " invisible";
+          }
+
           // build info divs
           infoDivs.push(
             `<div class="bar-info-segment d-none" id="${infoDivID}">`,
@@ -198,7 +218,7 @@ $(document).ready(function() {
           );
 
           buildContainer.push(
-            `<div class="bar-segment" id="${pieceDivID}" infoid="${infoDivID}" style="left: ${left}%; right: ${right}%;">`,
+            `<div class="bar-segment${intermissionClass}" id="${pieceDivID}" infoid="${infoDivID}" style="left: ${left}%; right: ${right}%;">`,
             `<div class="bar-segment-label">${pieceDuration}</div>`,
             `</div>`
           );
@@ -219,7 +239,10 @@ $(document).ready(function() {
       window.concertData = concertData;
       console.log("concert data object: ", concertData);
 
-      // reveal options form
+      // reveal options form; if Act -> unlock sort by time to intermission
+      if (hKey['Act'] !== "null") {
+        $('#sort-option').children('option:contains("Time to Intermission")').removeAttr("disabled");
+      }
       $('#options-form').removeClass("d-none");
 
       // event handler to open info panels
@@ -431,8 +454,32 @@ $(document).ready(function() {
         $('.bar-container, .bar-graphic, .bar-segment').removeClass('short-bar');
       }
 
-      // TODO option to sort in a different order
+      // sort options; TODO order currently hardcoded
+      // choose which property to sort by
+      var sortProperty = "";
+      if(graphConfig['sortOption'] === "Total Duration") {
+        sortProperty = "Total Duration";
+      } else if (graphConfig['sortOption'] === "Concert Title") {
+        sortProperty = "self";
+      } else if (graphConfig['sortOption'] === "Time to Intermission") {
+        sortProperty = "Time to Intermission";
+      }
 
+      // build a sort array
+      var sortArray = [];
+      for (concert in concertData) {
+        concertItem = [];
+        if (sortProperty === "self") {
+          concertItem.push(concert);
+        } else {
+          concertItem.push(concertData[concert][sortProperty]);
+        }
+        concertItem.push(concertData[concert]['ID']);
+        sortArray.push(concertItem);
+      }
+      
+      // sort the concert divs
+      sortConcerts(sortArray, graphConfig['sortOrder']);
     }
 
     // utility for creating and updating category highlight UI
@@ -553,6 +600,35 @@ $(document).ready(function() {
         }
       } while ( $("#" + id).length > 0 || arrayflag );
       return id;
+    }
+
+    // utility to sort concerts
+    function sortConcerts(sortArray, order) {
+      if (sortArray === "" || sortArray === undefined) return;
+      // sort array
+      if (order === "descending") {
+        if (typeof(sortArray[0][0]) === "number") {
+          sortArray.sort((a, b) => b[0] - a[0]); // largest to smallest
+        } else {
+          sortArray.sort().reverse();
+        }
+      } else {
+        if (typeof(sortArray[0][0]) === "number") {
+          sortArray.sort((a, b) => a[0] - b[0]); // smallest to largest
+        } else {
+          sortArray.sort();
+        }
+      }
+
+      // move divs around
+      // i is a string? don't know why, but using `==` works... probably because each item in the array is itself an array, and arrays are technically objects??
+      for (i in sortArray) {
+        if (i == 0) {
+          $('#' + sortArray[i][1]).insertAfter('.bars-container');
+        } else {
+          $('#' + sortArray[i][1]).insertAfter('#' + sortArray[i-1][1]);
+        }
+      }
     }
 
 });

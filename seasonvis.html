@@ -79,6 +79,24 @@
             <input type="checkbox" id="compact-toggle" class="form-check-input" name="compactFormat" value="compact format">
             <label for="compact-toggle" class="form-check-label">Use compact format</label>
           </div>
+          <div class="mb-3 col-lg-6">
+            <label for="sort-option" class="form-label">Sort by:</label>
+            <select class="form-select" name="sortOption" id="sort-option">
+              <option>Total Duration</option>
+              <option>Concert Title</option>
+              <option disabled>Time to Intermission</option>
+            </select>
+          </div>
+          <div class="mb-3 col-lg-6">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="sortOrder" id="sortOrder1" value="ascending" checked>
+              <label class="form-check-label" for="sortOrder1">Ascending</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="sortOrder" id="sortOrder2" value="descending">
+              <label class="form-check-label" for="sortOrder2">Descending</label>
+            </div>
+          </div>
       </div>
       </section>
       <section>
