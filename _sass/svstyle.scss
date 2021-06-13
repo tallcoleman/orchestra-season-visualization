@@ -14,7 +14,7 @@ $grey-color-very-light: lighten($grey-color, 60%);
 $grey-color-light: lighten($grey-color, 40%);
 $grey-color-dark:  darken($grey-color, 25%);
 
-$bar-height: 28px;
+$bar-height: 20px;
 
 
 // Colors
@@ -81,6 +81,7 @@ $i: 1;
 .bar-container {
   margin-bottom: $graph-margin-bottom;
   width: 100%;
+  line-height: 1;
 }
 
 .bar-label {
@@ -118,7 +119,7 @@ $i: 1;
 // piece info styling
 
 .bar-info-container {
-  padding-left: 10px;
+  padding: 10px 0 10px 10px;
 }
 
 .piece-composer-name {
@@ -130,4 +131,14 @@ $i: 1;
 #highlight-category-list {
   max-height: 10em;
   overflow: auto;
+}
+
+// short bar
+.short-bar {
+  &.bar-container {
+    margin-bottom: 0px;
+  }
+  &.bar-graphic, &.bar-segment {
+    height: 12px;
+  }
 }

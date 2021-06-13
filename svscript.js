@@ -56,17 +56,15 @@ $(document).ready(function() {
     var buildContainer = [];
     var concertData = {};
     var csvHeadings = Object.keys(data[0]); // duplicated below?
+    console.log(csvHeadings);
 
     // get data map for CSV headings
-    // TODO doesn't work because modal is async
     dataMapUIBuilder(csvHeadings);
-    // console.log("heading key", hKey);
 
     // trigger build if data map form submitted
     $('#csv-options-form').submit(function(e){
       e.preventDefault();
       $('#csvOptionsModal').modal("hide");
-      console.log($(this).serializeArray());
       var headingKeyInput = $(this).serializeArray();
       buildChart2(headingKeyInput);
     });
@@ -112,6 +110,7 @@ $(document).ready(function() {
         // add the piece to the concert
         Object.assign(concertData[row[hKey['Concert Title']]]['pieces'], {[row[hKey['Work Title']]]: newPiece});
       }
+      console.log(concertData);
 
       // create concert metadata
       for (concert in concertData) {
@@ -165,7 +164,7 @@ $(document).ready(function() {
         var previous = 0;
         var concertDuration = concertData[concert]['TotalDuration'];
 
-        var infoDivs = [`<div class="bar-info-container">`];
+        var infoDivs = [`<div class="bar-info-container d-none">`];
 
         // build divs for individual pieces
         for (i in pieceIndex) {
@@ -186,10 +185,8 @@ $(document).ready(function() {
           // build info divs
           infoDivs.push(
             `<div class="bar-info-segment d-none" id="${infoDivID}">`,
-            `<p>`,
             `<span class="piece-composer-name">${pieceObj['Composer']}: </span>`,
             `<span class="piece-title">${piece}</span>`,
-            `</p>`,
             `</div>`
           );
 
@@ -225,7 +222,15 @@ $(document).ready(function() {
         $(this).siblings().removeClass("bar-segment-selected");
         $(infoID).toggleClass("d-none");
         $(this).toggleClass("bar-segment-selected");
+        if ($(infoID).siblings().addBack().filter(':not(.d-none)').length > 0) {
+          $(infoID).parent("div").removeClass("d-none");
+        } else {
+          $(infoID).parent("div").addClass("d-none");
+        }
       });
+
+      // $(infoID).parent("div").toggleClass("d-none");
+
 
         // CATEGORY HIGHLIGHT UI
         // category highlight - selector input
@@ -320,7 +325,7 @@ $(document).ready(function() {
 
           // disable currently selected values (except for tag selecting it); remove checkboxes for fields already spoken for
           $('.modal-body option').removeAttr("disabled");
-          $('.modal-body div > input[type="checkbox"]').removeClass("d-none");
+          $('.modal-body div > input[type="checkbox"]').parent("div").removeClass("d-none");
           for (i in selectionValues) {
             $('.modal-body option').filter(function(){
               return $(this).text() === selectionValues[i] && $(this).parent("select").val() !== selectionValues[i];
@@ -344,6 +349,8 @@ $(document).ready(function() {
         // });
       }
     }
+
+    // UTILITIES START HERE
 
     // utility to update chart after first build
     function updateChart(graphConfig, concertData) {
@@ -404,6 +411,16 @@ $(document).ready(function() {
         $('div.bar-segment-label').removeClass("d-none");
       } else {
         $('div.bar-segment-label').addClass("d-none");
+      }
+
+      // compact format
+      // TODO make it a bit more robust than just "running after" prev 2 checks?
+      if(graphConfig['compactFormat']) {
+        $('.bar-container, .bar-graphic, .bar-segment').addClass('short-bar');
+        $('div.bar-segment-label').addClass("d-none");
+        $('div.bar-label').addClass("d-none");
+      } else {
+        $('.bar-container, .bar-graphic, .bar-segment').removeClass('short-bar');
       }
 
       // TODO option to sort in a different order
