@@ -56,7 +56,7 @@ $(document).ready(function() {
     var buildContainer = [];
     var concertData = {};
     var csvHeadings = Object.keys(data[0]); // duplicated below?
-    console.log(csvHeadings);
+    console.log("csv headings", csvHeadings);
 
     // get data map for CSV headings
     dataMapUIBuilder(csvHeadings);
@@ -64,8 +64,16 @@ $(document).ready(function() {
     // trigger build if data map form submitted
     $('#csv-options-form').submit(function(e){
       e.preventDefault();
-      $('#csvOptionsModal').modal("hide");
+      var validationFlag = true;
+      $('#csv-options-form select[required]').each(function(index, selectItem) {
+        if (selectItem.value === "null") {
+          $(selectItem).addClass("is-invalid");
+          validationFlag = false;
+        } else $(selectItem).removeClass("is-invalid");
+      });
+      if (validationFlag === false) return;
       var headingKeyInput = $(this).serializeArray();
+      $('#csvOptionsModal').modal("hide");
       buildChart2(headingKeyInput);
     });
 
@@ -78,7 +86,7 @@ $(document).ready(function() {
       for (i in headingKeyInput) {
         Object.assign(hKey, {[headingKeyInput[i]['name']]: headingKeyInput[i]['value']});
       }
-      console.log(hKey);
+      console.log("heading key", hKey);
 
 
       // DATA HANDLING
@@ -110,7 +118,6 @@ $(document).ready(function() {
         // add the piece to the concert
         Object.assign(concertData[row[hKey['Concert Title']]]['pieces'], {[row[hKey['Work Title']]]: newPiece});
       }
-      console.log(concertData);
 
       // create concert metadata
       for (concert in concertData) {
@@ -278,6 +285,7 @@ $(document).ready(function() {
               `<select id="select-${dataField}" class="form-select" name="${dataField}" required>`,
               csvHeadingOptions.join(""),
               `</select>`,
+              `<div class="invalid-feedback">Please select a field</div>`,
               `</div>`
             );
           }
@@ -338,7 +346,7 @@ $(document).ready(function() {
         $('#csvOptionsModal').modal("show");
         // TODO clear the file input? But not when successful?
         $('#csvOptionsModal').on('hidden.bs.modal', function(){
-          console.log("modal finished");
+          // console.log("modal finished");
         });
 
         // $('#csv-options-form').submit(function(e){
