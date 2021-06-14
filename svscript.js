@@ -26,6 +26,7 @@ $(document).ready(function() {
 
   // used to remember UI color selections
   window.colorUI = {};
+  window.colorUILabels = {};
 
   // file submission handler; parse config
   $('#files').on("change", function(e) {
@@ -154,10 +155,11 @@ $(document).ready(function() {
       var maxConcertDuration = Math.max(...totalDurationValues);
       totalDurations.sort((a, b) => b[1] - a[1]); // largest to smallest
 
-      // chart container, heading, TODO legend container
+      // chart container, heading, legend container (blank)
       buildContainer.push(
         `<div class="chart-container">`,
         `<h2 class="chart-title" id="chart-title">Untitled Chart</h2>`,
+        `<div class="legend-container"></div>`,
         `<div class="bars-container">`
       );
 
@@ -269,6 +271,7 @@ $(document).ready(function() {
           if (coreData[key] === undefined || coreData[key]['category'] === true) {
             highlightCategories.push(`<li><option>${hKey[key]}</option></li>`);
             window.colorUI[hKey[key]] = {};
+            window.colorUILabels[hKey[key]] = {};
           }
         }
         $('#select-highlight-category').html(highlightCategories.join(""));
@@ -372,12 +375,6 @@ $(document).ready(function() {
           // console.log("modal finished");
         });
 
-        // $('#csv-options-form').submit(function(e){
-        //   e.preventDefault();
-        //   $('#csvOptionsModal').modal("hide");
-        //   console.log($(this).serializeArray());
-        //   return $(this).serializeArray(); // TODO make mapping object
-        // });
       }
     }
 
@@ -385,6 +382,7 @@ $(document).ready(function() {
 
     // utility to update chart after first build
     function updateChart(graphConfig, concertData) {
+
       // chart title update
       if (graphConfig['chartTitle']) {
         $('#chart-title').text(graphConfig['chartTitle']);
@@ -399,7 +397,7 @@ $(document).ready(function() {
         let i = 0;
         for (category in graphConfig['categoryHighlight']) {
           let styleClass = `category-highlight${i}`;
-          styleContainer.push(`.bar-segment.${styleClass} { background-color: ${graphConfig['categoryHighlight'][category]};} `);
+          styleContainer.push(`.bar-segment.${styleClass}, .legend-item-color.${styleClass} { background-color: ${graphConfig['categoryHighlight'][category]};} `);
           styleKey[category] = styleClass;
           i += 1;
         }
@@ -428,6 +426,21 @@ $(document).ready(function() {
           var selectors = "#" + styleObj[styleClass].join(",#");
           $(selectors).addClass(styleClass);
         }
+
+        // make and show legend items
+        legendBuildContainer = [];
+        for (key in styleKey) {
+          if (graphConfig['legendLabel'][key].length > 0) {
+            legendBuildContainer.push(
+              `<div class="legend-item">`,
+              `<div class="legend-item-color ${styleKey[key]}"></div>`,
+              `<div class="legend-item-label">${graphConfig['legendLabel'][key]}</div>`,
+              `</div>` // legend-item
+            );  
+          }
+        }
+        $('.legend-container').html(legendBuildContainer.join(""));
+        
       }
 
       // bar labels
@@ -454,7 +467,7 @@ $(document).ready(function() {
         $('.bar-container, .bar-graphic, .bar-segment').removeClass('short-bar');
       }
 
-      // sort options; TODO order currently hardcoded
+      // sort options
       // choose which property to sort by
       var sortProperty = "";
       if(graphConfig['sortOption'] === "Total Duration") {
@@ -501,7 +514,7 @@ $(document).ready(function() {
       var uniqueValues = [...new Set(attributeValues)];
       uniqueValues.sort((a, b) => a - b); // sort smallest to largest
 
-      var valueList = [`<div>`];
+      var valueList = [`<p>Only labeled categories will appear in the legend:</p><div>`];
       for (value in uniqueValues) {
         valueList.push(colorPicker(value, blankToggle(uniqueValues[value], "readable"),"categoryHighlight"));
       }
@@ -510,10 +523,18 @@ $(document).ready(function() {
       $('#highlight-category-list').removeClass("d-none");
       $('#highlight-category-list').html(valueList.join(""));
 
+      // TODO refactor this section
       // restores previously selected colors
       if (window.colorUI[attribute] !== {}) {
         for (variable in window.colorUI[attribute]) {
-          $(`#highlight-category-list label:contains(${variable})`).siblings("input").val(window.colorUI[attribute][variable]);
+          $(`#highlight-category-list .highlight-category-color-picker[datapoint="${variable}"]`).val(window.colorUI[attribute][variable]);
+        }
+      }
+
+      // restores previously selected labels
+      if (window.colorUILabels[attribute] !== {}) {
+        for (variable in window.colorUILabels[attribute]) {
+          $(`#highlight-category-list .legend-label[datapoint="${variable}"]`).val(window.colorUILabels[attribute][variable]);
         }
       }
 
@@ -521,8 +542,17 @@ $(document).ready(function() {
       $('.highlight-category-color-picker').change(function(e){
         var highlightCategory = $('#select-highlight-category').val();
         var selectedColor = $(this).val();
-        var selectedVariable = $(this).siblings("label").text();
+        var selectedVariable = $(this).attr("datapoint");
         Object.assign(window.colorUI[highlightCategory], {[selectedVariable]: selectedColor});
+      });
+
+      // remember legend labels
+      $('.legend-label').change(function(e){
+        var highlightCategory = $('#select-highlight-category').val();
+        var selectedLabel = $(this).val();
+        var selectedVariable = $(this).siblings("span").text();
+        Object.assign(window.colorUILabels[highlightCategory], {[selectedVariable]: selectedLabel});
+
       });
 
       // TODO - after chart update routine is written - try to make it update on change, e.g.
@@ -532,12 +562,16 @@ $(document).ready(function() {
     }
 
     // color picker UI generator, uses provided palette
+    // TODO determine if hardcoding of legend label is OK?
     function colorPicker(number, name, section) {
       var pickerBuilder = [];
       pickerBuilder.push(
         `<div class="row align-items-center mb-2">`,
-        `<input type="color" class="highlight-category-color-picker form-control form-control-color col-lg-auto" name="${[section,name].join(";")}" value="${colorPalette.highlight1}" list="colors${number}">`,
-        `<label for="catColor${number}" class="form-label col">${name}</label>`,
+        `<input type="color" class="highlight-category-color-picker form-control form-control-color col-lg-auto" name="${[section,name].join(";")}" value="${colorPalette.highlight1}" datapoint="${name}" list="colors${number}">`,
+        `<div class="input-group col">`,
+        `<span class="input-group-text legend-datapoint">${name}</span>`,
+        `<input type="text" class="form-control legend-label" placeholder="label" name="legendLabel;${name}" datapoint="${name}">`,
+        `</div>`,
         `<datalist id="colors${number}">`
       );
       for (color in colorPalette) {

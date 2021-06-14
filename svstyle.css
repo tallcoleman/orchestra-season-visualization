@@ -31,12 +31,12 @@
     vertical-align: middle; }
 
 .legend-item {
-  margin-right: 10px; }
+  margin-right: 16px; }
 
 .legend-item-color {
   height: 18px;
   width: 18px;
-  margin-right: 3px; }
+  margin-right: 4px; }
 
 /* barchart styling */
 /* In datawrapper, there was some fancy last child stuff going on */

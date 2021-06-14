@@ -64,13 +64,13 @@ $i: 1;
 }
 
 .legend-item {
-  margin-right: 10px;
+  margin-right: $base-font-size;
 }
 
 .legend-item-color {
   height: 18px;
   width: 18px;
-  margin-right: 3px;
+  margin-right: 4px;
 }
 
 .legend-item-label {
