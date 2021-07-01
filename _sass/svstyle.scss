@@ -1,6 +1,6 @@
 @charset "UTF-8";
 // Build command: `sass _sass/svstyle.scss svstyle.css`
-// compressed `sass --style=compressed _sass/svstyle.scss svstyle-c.css`
+// compressed `sass --style=compressed --sourcemap=none _sass/svstyle.scss svstyle.min.css`
 // or `sass /Users/ben/OneDrive/Documents/Programming Projects/Season Visualization/versionOne/svstyle.scss /Users/ben/OneDrive/Documents/Programming Projects/Season Visualization/versionOne/svstyle.css`
 
 // styles that work for the main page but not for the embeds are included in additional-style.css
@@ -76,8 +76,8 @@ $i: 1;
   margin-right: 4px;
 }
 
-.legend-item-label {
-}
+// .legend-item-label {
+// }
 
 /* barchart styling */
 /* In datawrapper, there was some fancy last child stuff going on */

@@ -86,6 +86,7 @@
               <option>Total Duration</option>
               <option>Concert Title</option>
               <option disabled>Time to Intermission</option>
+              <option disabled>First Performance</option>
             </select>
           </div>
           <div class="mb-3 col-lg-6">
@@ -114,6 +115,15 @@
 
     <!-- anchor point for graph -->
     <div id="graph-insert" class="mb-4"></div>
+
+    <!-- embed code area -->
+    <div id="embed-code-display" class="mb-4 d-none">
+      <h3>Embed this graph:</h3>
+      <p><strong>Graph Code:</strong> Copy this text and save it as a html file you can link to:</p>
+      <textarea id="embed-code-text" readonly class="form-control mb-3"></textarea>
+      <p><strong>iFrame Code:</strong> Copy this code into your page and replace "YOUR_URL_HERE" with the link to the html file you saved:</p>
+      <textarea id="iframe-code-text" readonly class="form-control mb-3"></textarea>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
   </body>

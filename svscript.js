@@ -1,17 +1,25 @@
 $(document).ready(function() {
+  
+  // ***************************************************************************
+  // Configuration TODO review later
+  // ***************************************************************************
+  
+  // assumptions: piece and concert names are unique
 
-  // initialization TODO review later
+  // configuration for data handling
   // maybe the type on "First Performance" should be 'date' or something
   var coreData = {
-    'Work Title':         {'required': true,  'type': 'str', 'category': false, 'pieceAttr': false},
-    'Duration':           {'required': true,  'type': 'int', 'category': false, 'pieceAttr': true},
-    'Concert Title':      {'required': true,  'type': 'str', 'category': false, 'pieceAttr': false},
-    'Program Position':   {'required': true,  'type': 'int', 'category': false, 'pieceAttr': true},
-    'Composer':           {'required': false, 'type': 'str', 'category': true, 'pieceAttr': true},
-    'Act':                {'required': false, 'type': 'int', 'category': false, 'pieceAttr': true},
-    'First Performance':  {'required': false, 'type': 'str', 'category': false, 'pieceAttr': false}
+    'Work Title':         {'required': true,  'type': 'str', 'category': false, 'attrLevel': 'pieceTitle'},
+    'Duration':           {'required': true,  'type': 'int', 'category': false, 'attrLevel': 'piece'},
+    'Concert Title':      {'required': true,  'type': 'str', 'category': false, 'attrLevel': 'concertTitle'},
+    'Program Position':   {'required': true,  'type': 'int', 'category': false, 'attrLevel': 'piece'},
+    'Composer':           {'required': false, 'type': 'str', 'category': true, 'attrLevel': 'piece'},
+    'Act':                {'required': false, 'type': 'int', 'category': false, 'attrLevel': 'piece'},
+    'First Performance':  {'required': false, 'type': 'date', 'category': false, 'attrLevel': 'concert'},
+    'Performances Count':    {'required': false, 'type': 'int', 'category': false, 'attrLevel': 'concert'}
   }
 
+  // default colour palette
   var colorPalette = {
     highlight1: "#BBBBBB",
     highlight2: "#4477AA",
@@ -22,24 +30,31 @@ $(document).ready(function() {
     highlight7: "#AA3377",
   };
 
+  // intermissions are handled differently than regular pieces
   var intermissionKey = ["intermission", "Intermission"];
 
   // used to remember UI color selections
   window.colorUI = {};
   window.colorUILabels = {};
 
-  // file submission handler; parse config
+  var graphID = IdGenerator("", []);
+
+  // ***************************************************************************
+  // Input Handling
+  // ***************************************************************************
+  
+  // triggered by file input
   $('#files').on("change", function(e) {
     e.preventDefault();
 
-    // see papaparse docs for details on config options
+    // parse csv using papaparse
     $('#files').parse({
       config: {
         delimiter: "",
         quoteChar: '"',
         header: true,
         skipEmptyLines: 'greedy',
-        complete: buildChart,
+        complete: MapData,
       },
       before: function(file, inputElem) {
         //console.log("Parsing file...", file);
@@ -53,47 +68,57 @@ $(document).ready(function() {
     });
   });
 
-  // graph builder
-  function buildChart(results, graphConfig) {
+  // ***************************************************************************
+  // Graph Builder
+  // ***************************************************************************
+  
+  // matches headings in user data to their roles
+  function MapData(results, graphConfig) {
     var data = results.data;
-    var buildContainer = [];
-    var concertData = {};
-    var csvHeadings = Object.keys(data[0]); // duplicated below?
+    var csvHeadings = Object.keys(data[0]);
     console.log("csv headings", csvHeadings);
 
-    // get data map for CSV headings
-    dataMapUIBuilder(csvHeadings);
+    // user input - get data mappings for CSV headings
+    DataMapUIBuilder(csvHeadings);
 
-    // trigger build if data map form submitted
+    // check data mapping input for validity; build graph
     $('#csv-options-form').submit(function(e){
       e.preventDefault();
-      var validationFlag = true;
+
+      var inputIsValid = true;
       $('#csv-options-form select[required]').each(function(index, selectItem) {
         if (selectItem.value === "null") {
           $(selectItem).addClass("is-invalid");
-          validationFlag = false;
+          inputIsValid = false;
         } else $(selectItem).removeClass("is-invalid");
       });
-      if (validationFlag === false) return;
+      if (inputIsValid === false) return;
+
       var headingKeyInput = $(this).serializeArray();
       $('#csvOptionsModal').modal("hide");
-      buildChart2(headingKeyInput);
-    });
 
-    // TODO remove - temporary heading key & builder - just dismiss modal
-    // var headingKeyInput = [{name: "Work Title", value: "WorkTitle"}, {name: "Duration", value: "Duration"}, {name: "Concert Title", value: "ConcertTitle"}, {name: "Program Position", value: "ProgramPosition"}, {name: "Composer", value: "Composer"}, {name: "Act", value: "null"}, {name: "First Performance", value: "null"}, {name: "highlight-include-6", value: "Living"}, {name: "highlight-include-7", value: "Women"}, {name: "highlight-include-8", value: "Heritages"}];
-    // buildChart2(headingKeyInput);
-
-    function buildChart2(headingKeyInput){
-      var hKey = {};
+      var hKey = {}; // heading key
       for (i in headingKeyInput) {
         Object.assign(hKey, {[headingKeyInput[i]['name']]: headingKeyInput[i]['value']});
       }
       console.log("heading key", hKey);
 
+      BuildChart(hKey);
+    });
 
-      // DATA HANDLING
+    // TODO remove - temporary heading key & builder - just dismiss modal
+    // var headingKeyInput = [{name: "Work Title", value: "WorkTitle"}, {name: "Duration", value: "Duration"}, {name: "Concert Title", value: "ConcertTitle"}, {name: "Program Position", value: "ProgramPosition"}, {name: "Composer", value: "Composer"}, {name: "Act", value: "null"}, {name: "First Performance", value: "null"}, {name: "highlight-include-6", value: "Living"}, {name: "highlight-include-7", value: "Women"}, {name: "highlight-include-8", value: "Heritages"}];
+    // BuildChart(headingKeyInput);
+
+    function BuildChart(hKey){
+
+      // -----------------------------------------------------------------------
+      // Data Handling
+      // -----------------------------------------------------------------------
+      var concertData = {};
       // rebuild data in nested form
+
+      // add attributes which are copied from data
       for (i in data) {
         row = data[i];
 
@@ -102,18 +127,31 @@ $(document).ready(function() {
           concertData[row[hKey['Concert Title']]] = {pieces: {}};
         }
 
-        // build piece attributes
+        // process each value in the row
         var newPiece = {};
         for (key in hKey) {
-          // check if it's in coreData; check if it's a piece attribute
+
           if (coreData[key] === undefined) {
+            // assume attributes that aren't in coreData are string piece attributes
             Object.assign(newPiece, {[hKey[key]]: row[hKey[key]]});
-          } else if (coreData[key]['pieceAttr'] === true) {
-            // check data type
+          } else {
+            // add attributes that are in coreData
+            // convert data to correct type
             if (coreData[key]['type'] === "int") {
-              Object.assign(newPiece, {[key]: parseInt(row[hKey[key]])});
+              var keyValue = parseInt(row[hKey[key]]);
+            } else if (coreData[key]['type'] === "str") {
+              var keyValue = row[hKey[key]];
+            } else if (coreData[key]['type'] === "date") {
+              var keyValue = row[hKey[key]];
             } else {
-              Object.assign(newPiece, {[key]: row[hKey[key]]});
+              var keyValue = row[hKey[key]];
+            }
+
+            // add attribute to right place in concertData
+            if (coreData[key]['attrLevel'] === 'piece') {
+              Object.assign(newPiece, {[key]: keyValue});
+            } else if (coreData[key]['attrLevel'] === 'concert' && concertData[row[hKey['Concert Title']]][key] === undefined) {
+              Object.assign(concertData[row[hKey['Concert Title']]], {[key]: keyValue});
             }
           }
         }
@@ -122,9 +160,9 @@ $(document).ready(function() {
         Object.assign(concertData[row[hKey['Concert Title']]]['pieces'], {[row[hKey['Work Title']]]: newPiece});
       }
 
-      // create concert metadata
+      // add attributes which are calculated from data
       for (concert in concertData) {
-        // max sequence number in csv can warn if pieces != max sequence (missing data case); think about how to handle WorkCount; can add other properties too (e.g. first performance, times performed)
+        // max sequence number in csv can warn if pieces != max sequence (missing data case); think about how to handle WorkCount
 
         // total duration (another option: to array, and then array reduce)
         // time to first intermission (only if Act is included in data)
@@ -141,11 +179,12 @@ $(document).ready(function() {
           'Total Duration': totalDuration,
           'Time to Intermission': timeToIntermission
         });
-
-        // TODO first performance, times performed
       }
 
-      // GRAPH BUILDING
+      // -----------------------------------------------------------------------
+      // Graph Building
+      // -----------------------------------------------------------------------
+      var buildContainer = [];
       // find max concert duration & sort concerts by duration
       var totalDurations = [];
       for (concert in concertData) {
@@ -168,7 +207,7 @@ $(document).ready(function() {
         var concert = totalDurations[i][0];
         // label, bar holder
 
-        var concertID = idGenerator("concert-", buildContainer);
+        var concertID = IdGenerator("concert-", buildContainer);
         Object.assign(concertData[concert], {'ID': concertID});
 
         buildContainer.push(
@@ -201,9 +240,9 @@ $(document).ready(function() {
           previous += pieceDuration;
 
           // unique IDs
-          var pieceDivID = idGenerator("piece-", buildContainer);
+          var pieceDivID = IdGenerator("piece-", buildContainer);
           concertData[concert]['pieces'][piece]['ID'] = pieceDivID;
-          var infoDivID = idGenerator("info-", buildContainer);
+          var infoDivID = IdGenerator("info-", buildContainer);
 
           // check for intermission in data
           var intermissionClass = "";
@@ -244,6 +283,8 @@ $(document).ready(function() {
       // reveal options form; if Act -> unlock sort by time to intermission
       if (hKey['Act'] !== "null") {
         $('#sort-option').children('option:contains("Time to Intermission")').removeAttr("disabled");
+      } else if (hKey['First Performance'] !== "null") {
+        $('#sort-option').children('option:contains("First Performance")').removeAttr("disabled");
       }
       $('#options-form').removeClass("d-none");
 
@@ -278,7 +319,7 @@ $(document).ready(function() {
 
         // category highlight - generate new options on change
         $('#select-highlight-category').change(function() {
-          categoryHighlightMenuChange(data);
+          CategoryHighlightMenuChange(data);
         });
 
       }
@@ -286,12 +327,12 @@ $(document).ready(function() {
       // refreshes graph on form submit
       $('#options-form').submit(function(e){
         e.preventDefault();
-        var newConfig = configBuilder($(this).serializeArray());
-        updateChart(newConfig, window.concertData);
+        var newConfig = ConfigBuilder($(this).serializeArray());
+        UpdateChart(newConfig, window.concertData);
       });
 
       // utility to build data map UI
-      function dataMapUIBuilder(csvHeadings) {
+      function DataMapUIBuilder(csvHeadings) {
         // DATA MAPPING
         // make selection UI for data mapping
         var dataMapUI = [];
@@ -378,15 +419,20 @@ $(document).ready(function() {
       }
     }
 
-    // UTILITIES START HERE
+    // *************************************************************************
+    // Utilities
+    // *************************************************************************
 
     // utility to update chart after first build
-    function updateChart(graphConfig, concertData) {
+    function UpdateChart(graphConfig, concertData) {
 
       // chart title update
       if (graphConfig['chartTitle']) {
-        $('#chart-title').text(graphConfig['chartTitle']);
+        var chartTitle = graphConfig['chartTitle'];
+      } else {
+        var chartTitle = "Untitled Chart";
       }
+      $('#chart-title').text(chartTitle);
 
       // COLOR UPDATING
       if (graphConfig['categoryHighlightVariable']) {
@@ -476,6 +522,8 @@ $(document).ready(function() {
         sortProperty = "self";
       } else if (graphConfig['sortOption'] === "Time to Intermission") {
         sortProperty = "Time to Intermission";
+      } else if (graphConfig['sortOption'] === "First Performance") {
+        sortProperty = "First Performance";
       }
 
       // build a sort array
@@ -492,11 +540,66 @@ $(document).ready(function() {
       }
       
       // sort the concert divs
-      sortConcerts(sortArray, graphConfig['sortOrder']);
+      SortConcerts(sortArray, graphConfig['sortOrder']);
+
+      // build the embed code
+      $('#embed-code-display').removeClass("d-none");
+
+      var iframeVars = {};
+      $.get("/svstyle.min.css", function(data){
+        iframeVars.mainSS = data;
+        GetEmbedScript(iframeVars);
+      }, dataType="text");
+
+      function GetEmbedScript(iframeVars) {
+        $.get("/embedscript.js", function(data) {
+          iframeVars.embedScript = data;
+          UpdateEmbedCode(iframeVars);
+        }, dataType="text");
+      }
+
+      function UpdateEmbedCode(iframeVars) {
+        // generate a unique ID for the iframe from graphID
+        var iframeID = "iframe-" + graphID;
+
+        var embedCode = [];
+        var iframeCode = [];
+        var graphHTML = $('#graph-insert').html();
+        var categoryHighlightSS = $('#category-highlight-stylesheet').html();
+        iframeCode.push(
+          '<script>',
+          `function alertsize(pixels, iframeID){pixels+=5;document.getElementById(iframeID).style.height=pixels+"px";}`,
+          '</script>',
+          `<iframe id="${iframeID}" title="${chartTitle}" src="YOUR_URL_HERE" frameborder="0" style="width: 0; min-width: 100% !important; border: none;">`,
+          '</iframe>'
+        );
+        embedCode.push(
+          '<html lang="en"><head><meta charset="UTF-8">',
+          '<title>Document</title>',
+          '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>',
+          '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">',
+          '<style>',
+          iframeVars.mainSS,
+          '</style>',
+          '<style>',
+          categoryHighlightSS,
+          '</style>',
+          '<script>',
+          iframeVars.embedScript,
+          '</script>',
+          '</head>',
+          `<body onload="parent.alertsize(document.body.scrollHeight, '${iframeID}');" iframeID="${iframeID}">`,
+          graphHTML,
+          '</body>',
+          '</html>'
+        );
+        $('#iframe-code-text').val(iframeCode.join(""));
+        $('#embed-code-text').val(embedCode.join(""));  
+      }
     }
 
     // utility for creating and updating category highlight UI
-    function categoryHighlightMenuChange(data) {
+    function CategoryHighlightMenuChange(data) {
       var attribute = $('#select-highlight-category').val();
 
       // no selection
@@ -516,7 +619,7 @@ $(document).ready(function() {
 
       var valueList = [`<p>Only labeled categories will appear in the legend:</p><div>`];
       for (value in uniqueValues) {
-        valueList.push(colorPicker(value, blankToggle(uniqueValues[value], "readable"),"categoryHighlight"));
+        valueList.push(ColorPicker(value, BlankToggle(uniqueValues[value], "readable"),"categoryHighlight"));
       }
       valueList.push(`</div>`);
 
@@ -563,7 +666,7 @@ $(document).ready(function() {
 
     // color picker UI generator, uses provided palette
     // TODO determine if hardcoding of legend label is OK?
-    function colorPicker(number, name, section) {
+    function ColorPicker(number, name, section) {
       var pickerBuilder = [];
       pickerBuilder.push(
         `<div class="row align-items-center mb-2">`,
@@ -582,7 +685,7 @@ $(document).ready(function() {
     }
 
     // utility function for handing blank strings in data - in "backend", we want it to match the data, but in frontend, blank values need a label. There's probably a better way to write this function.
-    function blankToggle(value, mode) {
+    function BlankToggle(value, mode) {
       if (mode === "readable") {
         if (value === "") {
           return "blank";
@@ -601,12 +704,12 @@ $(document).ready(function() {
     }
 
     // utility to turn options form output (flat, array of objects) into single config object that is nested where required
-    function configBuilder(formResults) {
+    function ConfigBuilder(formResults) {
       var graphConfig = {};
 
       for (result in formResults) {
         var value = formResults[result]['value'];
-        var keyArr = formResults[result]['name'].split(";").map(x => blankToggle(x, "data")); // blank -> back into -> ""
+        var keyArr = formResults[result]['name'].split(";").map(x => BlankToggle(x, "data")); // blank -> back into -> ""
 
         // Seems to be the best way to handle nested levels. Not elegant.
         if (keyArr.length === 1) {
@@ -626,7 +729,7 @@ $(document).ready(function() {
 
     // utility to generate unique IDs
     // checks passed array and DOM for matches to ensure uniqueness
-    function idGenerator(prefix, array) {
+    function IdGenerator(prefix, array) {
       do {
         var id = prefix + Math.round(Math.random() * 10**8);
         for (i in array) {
@@ -637,7 +740,7 @@ $(document).ready(function() {
     }
 
     // utility to sort concerts
-    function sortConcerts(sortArray, order) {
+    function SortConcerts(sortArray, order) {
       if (sortArray === "" || sortArray === undefined) return;
       // sort array
       if (order === "descending") {
