@@ -79,8 +79,6 @@
   max-height: 10em;
   overflow: auto; }
 
-.short-bar.bar-container {
-  margin-bottom: 0px; }
 .short-bar.bar-graphic, .short-bar.bar-segment {
   height: 12px; }
 

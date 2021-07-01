@@ -1,6 +1,9 @@
 @charset "UTF-8";
 // Build command: `sass _sass/svstyle.scss svstyle.css`
+// compressed `sass --style=compressed _sass/svstyle.scss svstyle-c.css`
 // or `sass /Users/ben/OneDrive/Documents/Programming Projects/Season Visualization/versionOne/svstyle.scss /Users/ben/OneDrive/Documents/Programming Projects/Season Visualization/versionOne/svstyle.css`
+
+// styles that work for the main page but not for the embeds are included in additional-style.css
 
 // Variables
 $max-width: 640px; // same effective width as tallcoleman.me
@@ -135,9 +138,6 @@ $i: 1;
 
 // short bar
 .short-bar {
-  &.bar-container {
-    margin-bottom: 0px;
-  }
   &.bar-graphic, &.bar-segment {
     height: 12px;
   }
