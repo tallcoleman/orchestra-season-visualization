@@ -280,10 +280,22 @@ $(document).ready(function() {
       window.concertData = concertData;
       console.log("concert data object: ", concertData);
 
-      // reveal options form; if Act -> unlock sort by time to intermission
+      // sort by concert name a-z
+      var sortArray = [];
+      for (concert in concertData) {
+        var concertItem = [];
+        concertItem.push(concert);
+        concertItem.push(concertData[concert]['ID']);
+        sortArray.push(concertItem);
+      }
+      SortConcerts(sortArray);
+
+
+      // reveal options form; show certain sort options if the proper data is supplied
       if (hKey['Act'] !== "null") {
         $('#sort-option').children('option:contains("Time to Intermission")').removeAttr("disabled");
-      } else if (hKey['First Performance'] !== "null") {
+      } 
+      if (hKey['First Performance'] !== "null") {
         $('#sort-option').children('option:contains("First Performance")').removeAttr("disabled");
       }
       $('#options-form').removeClass("d-none");
@@ -529,7 +541,7 @@ $(document).ready(function() {
       // build a sort array
       var sortArray = [];
       for (concert in concertData) {
-        concertItem = [];
+        var concertItem = [];
         if (sortProperty === "self") {
           concertItem.push(concert);
         } else {
