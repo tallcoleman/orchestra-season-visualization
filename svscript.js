@@ -1,7 +1,7 @@
 $(document).ready(function() {
   
   // ***************************************************************************
-  // Configuration TODO review later
+  // Configuration
   // ***************************************************************************
   
   // assumptions: piece and concert names are unique
@@ -95,6 +95,7 @@ $(document).ready(function() {
       if (inputIsValid === false) return;
 
       var headingKeyInput = $(this).serializeArray();
+      $('#csvOptionsModal').removeAttr("clearInputOnClose");
       $('#csvOptionsModal').modal("hide");
 
       var hKey = {}; // heading key
@@ -105,10 +106,6 @@ $(document).ready(function() {
 
       BuildChart(hKey);
     });
-
-    // TODO remove - temporary heading key & builder - just dismiss modal
-    // var headingKeyInput = [{name: "Work Title", value: "WorkTitle"}, {name: "Duration", value: "Duration"}, {name: "Concert Title", value: "ConcertTitle"}, {name: "Program Position", value: "ProgramPosition"}, {name: "Composer", value: "Composer"}, {name: "Act", value: "null"}, {name: "First Performance", value: "null"}, {name: "highlight-include-6", value: "Living"}, {name: "highlight-include-7", value: "Women"}, {name: "highlight-include-8", value: "Heritages"}];
-    // BuildChart(headingKeyInput);
 
     function BuildChart(hKey){
 
@@ -162,10 +159,7 @@ $(document).ready(function() {
 
       // add attributes which are calculated from data
       for (concert in concertData) {
-        // max sequence number in csv can warn if pieces != max sequence (missing data case); think about how to handle WorkCount
-
-        // total duration (another option: to array, and then array reduce)
-        // time to first intermission (only if Act is included in data)
+        // total duration; time to first intermission (only if Act is included in data)
         totalDuration = 0;
         timeToIntermission = 0;
         for (piece in concertData[concert]['pieces']) {
@@ -233,7 +227,7 @@ $(document).ready(function() {
           var piece = pieceIndex[i][0];
           var pieceObj = concertData[concert]['pieces'][piece];
 
-          // set width of bars - TODO consider adding a manual width scale option
+          // set width of bars
           var pieceDuration = pieceObj['Duration'];
           var left = Math.round(previous / maxConcertDuration * (100 * 10000)) / 10000;
           var right = Math.round(((maxConcertDuration - (previous + pieceDuration)) / maxConcertDuration) * (100 * 10000)) / 10000;
@@ -313,8 +307,6 @@ $(document).ready(function() {
           $(infoID).parent("div").addClass("d-none");
         }
       });
-
-      // $(infoID).parent("div").toggleClass("d-none");
 
 
         // CATEGORY HIGHLIGHT UI
@@ -423,11 +415,13 @@ $(document).ready(function() {
 
         // trigger modal
         $('#csvOptionsModal').modal("show");
-        // TODO clear the file input? But not when successful?
-        $('#csvOptionsModal').on('hidden.bs.modal', function(){
-          // console.log("modal finished");
-        });
 
+        // clear input on close unless successful
+        $('#csvOptionsModal').on('hidden.bs.modal', function(){
+          if ($('#csvOptionsModal').attr('clearInputOnClose') !== undefined) {
+            $('#files').val('');
+          }
+        });
       }
     }
 
@@ -516,7 +510,6 @@ $(document).ready(function() {
       }
 
       // compact format
-      // TODO make it a bit more robust than just "running after" prev 2 checks?
       if(graphConfig['compactFormat']) {
         $('.bar-container, .bar-graphic, .bar-segment').addClass('short-bar');
         $('div.bar-segment-label').addClass("d-none");
@@ -638,7 +631,6 @@ $(document).ready(function() {
       $('#highlight-category-list').removeClass("d-none");
       $('#highlight-category-list').html(valueList.join(""));
 
-      // TODO refactor this section
       // restores previously selected colors
       if (window.colorUI[attribute] !== {}) {
         for (variable in window.colorUI[attribute]) {
@@ -669,15 +661,9 @@ $(document).ready(function() {
         Object.assign(window.colorUILabels[highlightCategory], {[selectedVariable]: selectedLabel});
 
       });
-
-      // TODO - after chart update routine is written - try to make it update on change, e.g.
-      // $('#highlight-category-list input').change(function() {
-      //   // run update chart routine
-      // });
     }
 
     // color picker UI generator, uses provided palette
-    // TODO determine if hardcoding of legend label is OK?
     function ColorPicker(number, name, section) {
       var pickerBuilder = [];
       pickerBuilder.push(
@@ -696,7 +682,7 @@ $(document).ready(function() {
       return pickerBuilder.join("");
     }
 
-    // utility function for handing blank strings in data - in "backend", we want it to match the data, but in frontend, blank values need a label. There's probably a better way to write this function.
+    // utility function for handing blank strings in data - in "backend", we want it to match the data, but in frontend, blank values need a label.
     function BlankToggle(value, mode) {
       if (mode === "readable") {
         if (value === "") {

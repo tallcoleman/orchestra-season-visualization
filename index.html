@@ -16,6 +16,10 @@
 
   <body class="container">
     <h1>Orchestra Season Visualization</h1>
+    <div class="col-lg-6">
+    <p>Instructions for this app and a CSV template can be found on its <a href="https://github.com/tallcoleman/orchestra-season-visualization">Github repository</a>.</p>
+    <p>This app runs completely in your browser - none of your data is sent outside of your own computer. This also means that the data will not be saved if you close or reload the page.</p>
+    </div>
     <!-- CSV input form -->
     <form class="form-inline mb-4 row">
       <div class="form-group col-lg-6">
@@ -28,7 +32,7 @@
     </form>
 
     <!-- TODO fix aria labels; modal for data mapping UI -->
-    <div class="modal fade" id="csvOptionsModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="csvOptionsModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" clearInputOnClose>
       <div class="modal-dialog">
         <form class="modal-content" id="csv-options-form">
           <div class="modal-header">
@@ -107,7 +111,7 @@
             <button type="submit" name="chartUpdate" class="btn btn-primary">Update Chart</button>
           </div>
           <div class="col-auto">
-            <button type="button" name="configSave" class="btn btn-secondary">Save Configuration</button>
+            <button type="button" name="configSave" class="btn btn-secondary d-none">Save Configuration</button>
           </div>
         </div>
       </section>
@@ -117,7 +121,7 @@
     <div id="graph-insert" class="mb-4"></div>
 
     <!-- embed code area -->
-    <div id="embed-code-display" class="mb-4 d-none">
+    <div id="embed-code-display" class="mb-4 col-lg-6 d-none">
       <h3>Embed this graph:</h3>
       <p><strong>Graph Code:</strong> Copy this text and save it as a html file you can link to:</p>
       <textarea id="embed-code-text" readonly class="form-control mb-3"></textarea>
