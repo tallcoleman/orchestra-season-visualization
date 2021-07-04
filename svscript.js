@@ -37,6 +37,9 @@ $(document).ready(function() {
   window.colorUI = {};
   window.colorUILabels = {};
 
+  // used to hold a unique embed ID for each category highlight variable
+  window.categoryIDs = {};
+
   var graphID = IdGenerator("", []);
 
   // ***************************************************************************
@@ -310,13 +313,14 @@ $(document).ready(function() {
 
 
         // CATEGORY HIGHLIGHT UI
-        // category highlight - selector input
+        // category highlight - selector input and embed ID generation
         var highlightCategories = [`<li><option value="null"></option></li>`];
         for (key in hKey) {
           if (coreData[key] === undefined || coreData[key]['category'] === true) {
             highlightCategories.push(`<li><option>${hKey[key]}</option></li>`);
             window.colorUI[hKey[key]] = {};
             window.colorUILabels[hKey[key]] = {};
+            window.categoryIDs[hKey[key]] = IdGenerator("", Object.values(window.categoryIDs).concat([graphID]));
           }
         }
         $('#select-highlight-category').html(highlightCategories.join(""));
@@ -564,8 +568,9 @@ $(document).ready(function() {
       }
 
       function UpdateEmbedCode(iframeVars) {
-        // generate a unique ID for the iframe from graphID
-        var iframeID = "iframe-" + graphID;
+        // select the embed ID which matches the category highlight variable
+        var currentCategory = $('#select-highlight-category').val();
+        var iframeID = "iframe-" + window.categoryIDs[currentCategory];
 
         var embedCode = [];
         var iframeCode = [];
