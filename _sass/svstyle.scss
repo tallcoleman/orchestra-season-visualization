@@ -19,6 +19,22 @@ $grey-color-dark:  darken($grey-color, 25%);
 
 $bar-height: 20px;
 
+// Mobile Handling
+
+@mixin media-query($device) {
+  @media screen and (max-width: $device) {
+    @content;
+  }
+}
+
+$on-mobile: 600px;
+
+@include media-query($on-mobile) {
+  .bar-segment.short-bar {
+    pointer-events: none;
+  }
+}
+
 
 // Colors
 // https://personal.sron.nl/~pault/#sec:qualitative
@@ -83,12 +99,14 @@ $i: 1;
 /* In datawrapper, there was some fancy last child stuff going on */
 .bar-container {
   margin-bottom: $graph-margin-bottom;
+  margin-top: $graph-margin-bottom;
   width: 100%;
   line-height: 1;
 }
 
 .bar-label {
   margin-bottom: $graph-margin-bottom;
+  margin-top: $graph-margin-bottom;
   padding-right: 5px;
 }
 
@@ -140,5 +158,20 @@ $i: 1;
 .short-bar {
   &.bar-graphic, &.bar-segment {
     height: 12px;
+  }
+}
+
+// navigation ui
+.graph-ui-container {
+  border-radius: 4px;
+  background: $grey-color-very-light;
+  padding: 8px;
+
+  .btn-outline-secondary {
+    background-color: #fff;
+    
+    &:hover {
+      color: #5c636a;
+    }
   }
 }

@@ -1,3 +1,6 @@
+@media screen and (max-width: 600px) {
+  .bar-segment.short-bar {
+    pointer-events: none; } }
 .bar-segment.highlight1 {
   background-color: #BBBBBB; }
 
@@ -42,11 +45,13 @@
 /* In datawrapper, there was some fancy last child stuff going on */
 .bar-container {
   margin-bottom: 4px;
+  margin-top: 4px;
   width: 100%;
   line-height: 1; }
 
 .bar-label {
   margin-bottom: 4px;
+  margin-top: 4px;
   padding-right: 5px; }
 
 .bar-graphic {
@@ -81,5 +86,14 @@
 
 .short-bar.bar-graphic, .short-bar.bar-segment {
   height: 12px; }
+
+.graph-ui-container {
+  border-radius: 4px;
+  background: #eeeeee;
+  padding: 8px; }
+  .graph-ui-container .btn-outline-secondary {
+    background-color: #fff; }
+    .graph-ui-container .btn-outline-secondary:hover {
+      color: #5c636a; }
 
 /*# sourceMappingURL=svstyle.css.map */
