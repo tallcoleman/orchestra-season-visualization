@@ -505,6 +505,7 @@ $(document).ready(function() {
       // refreshes graph on form submit
       $('#options-form').submit(function(e){
         e.preventDefault();
+        umami.track("options-input-update", {selected_options: $(this).serialize()});
         var newConfig = ConfigBuilder($(this).serializeArray());
         UpdateChart(newConfig, window.concertData);
       });
